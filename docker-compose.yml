@@ -1,0 +1,33 @@
+services:
+  foodtracker:
+    build: .
+    ports: ["8080:8080"]
+    volumes: ["./data:/data","caddy-data:/pki:ro"]
+    environment:
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://opencode.ai/inference/go/openai/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MODEL: ${MODEL:-deepseek-v4.1-flash}
+      TZ: ${TZ:-Europe/Berlin}
+      STT_BASE_URL: ${STT_BASE_URL:-http://stt:8000/v1}
+      STT_MODEL: ${STT_MODEL:-whisper-1}
+    restart: unless-stopped
+
+  # Local speech-to-text: NVIDIA Parakeet TDT 0.6B v3 on CPU (amd64 and arm64), OpenAI-compatible
+  stt:
+    build: ./stt
+    volumes: ["stt-cache:/cache"]
+    restart: unless-stopped
+
+  # HTTPS for the LAN with a self-signed local CA (needed for the microphone on phones)
+  https:
+    image: caddy:2-alpine
+    ports: ["443:443"]
+    environment:
+      HOST: ${HOST:-192.168.1.163}
+    volumes: ["./Caddyfile:/etc/caddy/Caddyfile:ro","caddy-data:/data"]
+    depends_on: [foodtracker]
+    restart: unless-stopped
+
+volumes:
+  stt-cache:
+  caddy-data:

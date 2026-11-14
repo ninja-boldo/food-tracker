@@ -1,0 +1,17 @@
+{
+	admin off
+	# Certificate used when a device opens https://<ip> (browsers send no hostname then)
+	default_sni {$HOST}
+	servers {
+		strict_sni_host insecure_off
+	}
+}
+
+# Catch-all: any hostname used on the LAN gets its own certificate, signed on demand
+# by one local root CA that you install on your devices once.
+https:// {
+	tls internal {
+		on_demand
+	}
+	reverse_proxy foodtracker:8080
+}
